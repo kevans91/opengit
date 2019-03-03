@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <fetch.h>
+#include <zlib.h>
 #include "lib/zlib-handler.h"
 #include "lib/common.h"
 #include "lib/ini.h"
@@ -101,12 +102,13 @@ index_pack_main(int argc, char *argv[])
 	struct index_generate_arg index_generate_arg;
 	char hdr[32];
 	int hdrlen;
+	char tmpref[2];
 
 	object_index_entry = malloc(sizeof(struct object_index_entry) * packfilehdr.nobjects);
 
 	/* Same as GNU git's parse_pack_objects, first pass */
 	for(x = 0; x < packfilehdr.nobjects; x++) {
-
+		objectinfo.crc = 0x00; // Same as crc32(0, NULL, 0);
 		lseek(packfd, offset, SEEK_SET);
 		pack_object_header(packfd, offset, &objectinfo);
 		//bzero(object_index_entry[x].sha, 41);
@@ -116,12 +118,13 @@ index_pack_main(int argc, char *argv[])
 			fprintf(stderr, "OBJ_REF_DELTA: currently not implemented. Exiting.\n"); exit(0);
 			offset += objectinfo.used;
 			lseek(packfd, offset, SEEK_SET);
-			lseek(packfd, 2, SEEK_CUR);
+			read(packfd, tmpref, 2);
+			objectinfo.crc = crc32(objectinfo.crc, tmpref, 2);
 			read(packfd, object_index_entry[x].digest, 20);
-			//object_index_entry[x].sha[40] = '\0';
 			offset += 22; /* 20 bytes + 2 for the header */
 			break;
 		case OBJ_OFS_DELTA:
+//			printf("CRC: %02x\n", objectinfo.crc);
 			SHA1_Init(&index_generate_arg.shactx);
 			pack_delta_content(packfd, &objectinfo);
 			hdrlen = sprintf(hdr, "%s %lu", object_name[objectinfo.ftype],
@@ -142,25 +145,27 @@ index_pack_main(int argc, char *argv[])
 		case OBJ_BLOB:
 		case OBJ_TAG:
 		default:
+			printf("Check 1: %d %02x\n", objectinfo.ptype, objectinfo.crc);
 			offset += objectinfo.used;
 			lseek(packfd, offset, SEEK_SET);
 			index_generate_arg.bytes = 0;
 			SHA1_Init(&index_generate_arg.shactx);
+			printf("Check 2: %d %02x\n", objectinfo.ptype, objectinfo.crc);
 
 			hdrlen = sprintf(hdr, "%s %lu", object_name[objectinfo.ftype],
 			    objectinfo.psize) + 1; // XXX This should be isize, not psize
 			// XXX this should be SHA1_Update, not SHA_Update
 			SHA1_Update(&index_generate_arg.shactx, hdr, hdrlen);
-			deflate_caller(packfd, pack_get_index_bytes_cb, &index_generate_arg);
+			deflate_caller(packfd, pack_get_index_bytes_cb, &objectinfo.crc, &index_generate_arg);
 			object_index_entry[x].offset = index_generate_arg.bytes;
 
 			SHA1_Final(object_index_entry[x].digest, &index_generate_arg.shactx);
 			offset += index_generate_arg.bytes;
 			break;
 		}
-//		for(q=0;q<20;q++)
-//			printf("%02x", object_index_entry[x].digest[q]);
-//		printf("\n");
+
+		object_index_entry[x].crc = objectinfo.crc;
+		printf("End: %d %02x\n", objectinfo.ptype, objectinfo.crc);
 	}
 
 	close(packfd);
@@ -197,8 +202,9 @@ index_pack_main(int argc, char *argv[])
 		write(idxfd, object_index_entry[x].digest, 20);
 
 	/* Write the SHA1 checksum of the corresponding packfile? */
-	for(x = 0; x < packfilehdr.nobjects; x++) {
-	}
+//	for(x = 0; x < packfilehdr.nobjects; x++) {
+//		write(idxfd, &object_index_entry[x].crc, 4);
+//	}
 
 	close(idxfd);
 

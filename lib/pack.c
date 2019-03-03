@@ -35,6 +35,7 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <zlib.h>
 #include "zlib-handler.h"
 #include "pack.h"
 #include "common.h"
@@ -146,21 +147,30 @@ pack_delta_content(int packfd, struct objectinfo *objectinfo)
 {
 	struct decompressed_object base_object, delta_object;
 	int q;
+	uint32_t _unused;
 
 	base_object.data = NULL;
 	base_object.size = 0;
 	base_object.deflated_size = 0;
 	lseek(packfd, objectinfo->ofsbase, SEEK_SET);
-	deflate_caller(packfd, buffer_cb, &base_object);
+	//printf("Start here_123: %02x\n", objectinfo->crc);
+	//deflate_caller(packfd, buffer_cb, &objectinfo->crc, &base_object);
+	deflate_caller(packfd, buffer_cb, &_unused, &base_object);
+	//printf("The value: %02x\n", objectinfo->crc);
 	objectinfo->deflated_size = base_object.deflated_size;
 
+	printf("Check 3: %d %02x\n", objectinfo->ptype, objectinfo->crc);
+
 	for(q=objectinfo->ndeltas;q>0;q--) {
+		printf("Loop 3\n");
+		printf("Check 4: %d %02x\n", objectinfo->ptype, objectinfo->crc);
 		lseek(packfd, objectinfo->deltas[q], SEEK_SET);
 
 		delta_object.data = NULL;
 		delta_object.size = 0;
 		delta_object.deflated_size = 0;
-		deflate_caller(packfd, buffer_cb, &delta_object);
+		printf("Check 4a:%d %02x\n", objectinfo->ptype, objectinfo->crc);
+		deflate_caller(packfd, buffer_cb, &objectinfo->crc, &delta_object);
 		applypatch(&base_object, &delta_object, objectinfo);
 		free(base_object.data);
 		free(delta_object.data);
@@ -174,8 +184,6 @@ pack_delta_content(int packfd, struct objectinfo *objectinfo)
 	 * not of the parent deltas.
 	 */
 	objectinfo->deflated_size = delta_object.deflated_size;
-
-
 }
 
 /* Used by index-pack to compute SHA and get offset bytes */
@@ -343,12 +351,15 @@ pack_object_header(int packfd, int offset, struct objectinfo *objectinfo)
 	objectinfo->used = 1;
 
 	read(packfd, &c, 1);
+	objectinfo->crc = crc32(objectinfo->crc, &c, 1);
 	objectinfo->ptype = (c >> 4) & 7;
 	objectinfo->psize = c & 15;
 	shift = 4;
 
 	while(c & 0x80) { 
+		printf("Loop 1\n");
 		read(packfd, &c, 1);
+		objectinfo->crc = crc32(objectinfo->crc, &c, 1);
 		objectinfo->psize += (c & 0x7f) << shift;
 		shift += 7;
 		objectinfo->used++;
@@ -365,12 +376,16 @@ pack_object_header(int packfd, int offset, struct objectinfo *objectinfo)
 		struct objectinfo childinfo;
 
 		read(packfd, &c, 1);
+		objectinfo->crc = crc32(objectinfo->crc, &c, 1);
 		delta = c & 0x7f;
 		
 		while(c & 0x80) {
+			printf("Loop 2\n");
 			ofshdrsize++;
 			delta += 1;
 			read(packfd, &c, 1);
+			objectinfo->crc = crc32(objectinfo->crc, &c, 1);
+			printf("Check A: %d %02x\n", objectinfo->ptype, objectinfo->crc);
 			delta = (delta << 7) + (c & 0x7f);
 		}
 		objectinfo->ndeltas = 0;
@@ -379,7 +394,6 @@ pack_object_header(int packfd, int offset, struct objectinfo *objectinfo)
 		object_header_ofs(packfd, offset, 1, objectinfo, &childinfo);
 		objectinfo->deltas[0] = offset + objectinfo->used + ofshdrsize;
 	}
-
 
 	return;
 }
