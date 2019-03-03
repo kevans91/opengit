@@ -152,30 +152,39 @@ pack_delta_content(int packfd, struct objectinfo *objectinfo)
 	base_object.data = NULL;
 	base_object.size = 0;
 	base_object.deflated_size = 0;
+	printf("Set: %lu\n", objectinfo->ofsbase);
 	lseek(packfd, objectinfo->ofsbase, SEEK_SET);
 	//printf("Start here_123: %02x\n", objectinfo->crc);
+	printf("Round 1 Start\n");
 	//deflate_caller(packfd, buffer_cb, &objectinfo->crc, &base_object);
 	deflate_caller(packfd, buffer_cb, &_unused, &base_object);
+	printf("Round 1 End\n");
+	//deflate_caller(packfd, buffer_cb, &_unused, &base_object);
 	//printf("The value: %02x\n", objectinfo->crc);
 	objectinfo->deflated_size = base_object.deflated_size;
 
 	printf("Check 3: %d %02x\n", objectinfo->ptype, objectinfo->crc);
 
+	printf("---Start of delta content--- = %d\n", objectinfo->ndeltas);
 	for(q=objectinfo->ndeltas;q>0;q--) {
 		printf("Loop 3\n");
 		printf("Check 4: %d %02x\n", objectinfo->ptype, objectinfo->crc);
+		printf("Setbbb: %lu\n", objectinfo->ofsbase);
 		lseek(packfd, objectinfo->deltas[q], SEEK_SET);
 
 		delta_object.data = NULL;
 		delta_object.size = 0;
 		delta_object.deflated_size = 0;
 		printf("Check 4a:%d %02x\n", objectinfo->ptype, objectinfo->crc);
-		deflate_caller(packfd, buffer_cb, &objectinfo->crc, &delta_object);
+		deflate_caller(packfd, buffer_cb, (q == 1) ? &objectinfo->crc : &_unused, &delta_object);
+//		deflate_caller(packfd, buffer_cb, &_unused, &delta_object);
+		printf("Check 4q:%d %02x\n", objectinfo->ptype, objectinfo->crc);
 		applypatch(&base_object, &delta_object, objectinfo);
 		free(base_object.data);
 		free(delta_object.data);
 		base_object.data = objectinfo->data;
 		base_object.size = objectinfo->isize;
+		printf("Check 4z:%d %02x\n", objectinfo->ptype, objectinfo->crc);
 	}
 
 	/*

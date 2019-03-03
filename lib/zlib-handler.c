@@ -77,6 +77,7 @@ deflate_caller(int sourcefd, inflated_handler inflated_handler, uint32_t *crcv, 
 
 	do {
 		strm.avail_in = input_len = read(sourcefd, in, CHUNK);
+		printf("Bytes: %02x %02x %02x %02x\n", in[0], in[1], in[2], in[3]);
 //		if (crcv != NULL) {
 //			*crcv = crc32(*crcv, in, input_len);
 //		}
@@ -107,7 +108,7 @@ deflate_caller(int sourcefd, inflated_handler inflated_handler, uint32_t *crcv, 
 			// Return value of 0 code means exit
 			use = input_len - strm.avail_in;
 //			printf("Bytes: %02x %02x %02x %02x\n", in[burn], in[burn+1], in[burn+2], in[burn+3]);
-//			printf("Burn size: %d\n", use);
+			printf("---------------Burn size: %d\n", use);
 			*crcv = crc32(*crcv, in+burn, use);
 			burn+=use;
 			input_len -= use;
