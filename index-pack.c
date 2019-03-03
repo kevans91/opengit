@@ -111,7 +111,6 @@ index_pack_main(int argc, char *argv[])
 		objectinfo.crc = 0x00; // Same as crc32(0, NULL, 0);
 		lseek(packfd, offset, SEEK_SET);
 		pack_object_header(packfd, offset, &objectinfo);
-		//bzero(object_index_entry[x].sha, 41);
 
 		switch(objectinfo.ptype) {
 		case OBJ_REF_DELTA:
@@ -124,7 +123,6 @@ index_pack_main(int argc, char *argv[])
 			offset += 22; /* 20 bytes + 2 for the header */
 			break;
 		case OBJ_OFS_DELTA:
-//			printf("CRC: %02x\n", objectinfo.crc);
 			SHA1_Init(&index_generate_arg.shactx);
 			pack_delta_content(packfd, &objectinfo);
 			hdrlen = sprintf(hdr, "%s %lu", object_name[objectinfo.ftype],
@@ -145,16 +143,13 @@ index_pack_main(int argc, char *argv[])
 		case OBJ_BLOB:
 		case OBJ_TAG:
 		default:
-			printf("Check 1: %d %02x\n", objectinfo.ptype, objectinfo.crc);
 			offset += objectinfo.used;
 			lseek(packfd, offset, SEEK_SET);
 			index_generate_arg.bytes = 0;
 			SHA1_Init(&index_generate_arg.shactx);
-			printf("Check 2: %d %02x\n", objectinfo.ptype, objectinfo.crc);
 
 			hdrlen = sprintf(hdr, "%s %lu", object_name[objectinfo.ftype],
 			    objectinfo.psize) + 1; // XXX This should be isize, not psize
-			// XXX this should be SHA1_Update, not SHA_Update
 			SHA1_Update(&index_generate_arg.shactx, hdr, hdrlen);
 			deflate_caller(packfd, pack_get_index_bytes_cb, &objectinfo.crc, &index_generate_arg);
 			object_index_entry[x].offset = index_generate_arg.bytes;
@@ -165,7 +160,6 @@ index_pack_main(int argc, char *argv[])
 		}
 
 		object_index_entry[x].crc = objectinfo.crc;
-		printf("End: %d %02x\n", objectinfo.ptype, objectinfo.crc);
 	}
 
 	close(packfd);
