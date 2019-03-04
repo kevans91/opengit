@@ -100,6 +100,7 @@ index_pack_main(int argc, char *argv[])
 
 	struct object_index_entry *object_index_entry;
 	struct index_generate_arg index_generate_arg;
+	// 32 is the max header length per git documentation
 	char hdr[32];
 	int hdrlen;
 	char tmpref[2];
@@ -125,7 +126,7 @@ index_pack_main(int argc, char *argv[])
 		case OBJ_OFS_DELTA:
 			SHA1_Init(&index_generate_arg.shactx);
 			pack_delta_content(packfd, &objectinfo);
-			hdrlen = sprintf(hdr, "%s %lu", object_name[objectinfo.ftype],
+			hdrlen = snprintf(hdr, 32, "%s %lu", object_name[objectinfo.ftype],
 			    objectinfo.isize) + 1;
 			SHA1_Update(&index_generate_arg.shactx, hdr, hdrlen);
 			SHA1_Update(&index_generate_arg.shactx, objectinfo.data, objectinfo.isize);
@@ -148,7 +149,7 @@ index_pack_main(int argc, char *argv[])
 			index_generate_arg.bytes = 0;
 			SHA1_Init(&index_generate_arg.shactx);
 
-			hdrlen = sprintf(hdr, "%s %lu", object_name[objectinfo.ftype],
+			hdrlen = snprintf(hdr, 32, "%s %lu", object_name[objectinfo.ftype],
 			    objectinfo.psize) + 1; // XXX This should be isize, not psize
 			SHA1_Update(&index_generate_arg.shactx, hdr, hdrlen);
 			deflate_caller(packfd, pack_get_index_bytes_cb, &objectinfo.crc, &index_generate_arg);

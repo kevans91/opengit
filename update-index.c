@@ -59,7 +59,7 @@ int
 update_index_open_index(FILE **indexptr)
 {
 	char indexpath[PATH_MAX];
-	sprintf(indexpath, "%s/index", dotgitpath);
+	snprintf(indexpath, PATH_MAX, "%s/index", dotgitpath);
 
 	printf("File: %s\n", indexpath);
 

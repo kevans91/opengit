@@ -58,7 +58,7 @@ config_parser()
 
 	ini_init_regex();
 
-	sprintf(ini_file, "%s/config", dotgitpath);
+	snprintf(ini_file, 1000, "%s/config", dotgitpath);
 	fp = fopen(ini_file, "r");
 	if (!fp) {
 		printf("Unable to open file: %s\n", ini_file);

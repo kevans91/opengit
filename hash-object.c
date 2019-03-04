@@ -97,7 +97,8 @@ hash_object_create_header(char *filepath, char *header)
 	int l;
 	stat(filepath, &sb);
 
-	l = sprintf(header, "blob %ld", sb.st_size);
+	/* 32 is the max of the header per git documentation */
+	l = snprintf(header, 32, "blob %ld", sb.st_size);
 
 	return l;
 }
@@ -112,7 +113,7 @@ hash_object_create_zlib(FILE *source, FILE *dest, unsigned char *header, unsigne
 	Bytef out[CHUNK];
 	char filepath[PATH_MAX + NAME_MAX];
 
-	sprintf(filepath, "%s/objects/%c%c", dotgitpath, checksum[0], checksum[1]);
+	snprintf(filepath, PATH_MAX + NAME_MAX, "%s/objects/%c%c", dotgitpath, checksum[0], checksum[1]);
 
 	strm.zalloc = Z_NULL;
 	strm.zfree = Z_NULL;
@@ -169,13 +170,13 @@ hash_object_create_file(FILE **objectfileptr, char *checksum)
 	char objectpath[PATH_MAX];
 
 	// First create the directory
-	sprintf(objectpath, "%s/objects/%c%c",
+	snprintf(objectpath, PATH_MAX, "%s/objects/%c%c",
 	    dotgitpath, checksum[0], checksum[1]);
 
 	mkdir(objectpath, 0755);
 
 	// Reusing objectpath variable
-	sprintf(objectpath, "%s/objects/%c%c/%s",
+	snprintf(objectpath, PATH_MAX, "%s/objects/%c%c/%s",
 	    dotgitpath, checksum[0], checksum[1], checksum+2);
 
 	*objectfileptr = fopen(objectpath, "w");

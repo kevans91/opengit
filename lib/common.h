@@ -29,7 +29,10 @@
 
 #include <limits.h>
 
+#ifndef nitems
 #define nitems(x)	(sizeof((x)) / sizeof((x)[0]))
+#endif
+
 #define BIT(nr)		(1 << (nr))
 
 extern char dotgitpath[PATH_MAX + NAME_MAX];

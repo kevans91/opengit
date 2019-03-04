@@ -68,7 +68,7 @@ clone_http_get_head(char *url, char *sha)
 	int r;
 	long offset;
 
-	sprintf(fetchurl, "%s/info/refs?service=git-upload-pack", url);
+	snprintf(fetchurl, 1000, "%s/info/refs?service=git-upload-pack", url);
 	if ((web = fetchGetURL(fetchurl, NULL)) == NULL) {
 		fprintf(stderr, "Unable to clone repository: %s\n", url);
 		exit(128);
@@ -172,7 +172,7 @@ clone_http_build_want(char **content, int content_length, char *capabilities, co
 	// size + want + space + SHA(40) + space + capabilities + newline
 	len = 4 + 4 + 1 + 40 + 1 +strlen(capabilities) + 1;
 
-	sprintf(line, "%04xwant %s %s\n", len, sha, capabilities);
+	snprintf(line, 3000, "%04xwant %s %s\n", len, sha, capabilities);
 	*content = realloc(*content, content_length + len + 1);
 	strncpy(*content+content_length, line, len+1);
 
@@ -244,7 +244,6 @@ clone_pack_protocol_process(void *buffer, size_t size, size_t nmemb, void *userp
 	struct parseread *parseread = userp;
 	int offset = 0;
 	char tmp[5];
-	int check;
 	int pool;
 
 	/*
@@ -271,7 +270,7 @@ clone_pack_protocol_process(void *buffer, size_t size, size_t nmemb, void *userp
 		if (parseread->state == STATE_NEWLINE) {
 			bzero(tmp, 5);
 			memcpy(tmp, reply+offset, 4); tmp[4] = '\0';
-			check = sscanf(tmp, "%04x", &parseread->osize);
+			sscanf(tmp, "%04x", &parseread->osize);
 
 			if (parseread->osize == 0) {
 				offset += 4;
@@ -325,12 +324,11 @@ clone_http_get_sha(char *url, char *sha, int packfd)
 {
 	char git_upload_pack[1000];
 	char *content = NULL;
-	int content_length;
 	struct parseread parseread;
 	struct url *fetchurl;
 	FILE *packptr;
 
-	sprintf(git_upload_pack, "%s/git-upload-pack", url);
+	snprintf(git_upload_pack, 1000, "%s/git-upload-pack", url);
 
 	fetchurl = fetchParseURL(git_upload_pack);
 	if (fetchurl == NULL) {
@@ -341,7 +339,8 @@ clone_http_get_sha(char *url, char *sha, int packfd)
 	parseread.cremnant = 0;
 	parseread.fd = packfd;
 
-	content_length = clone_build_post_content(sha, &content);
+	/* Not capturing the return value unless needed */
+	clone_build_post_content(sha, &content);
 
 	setenv("HTTP_ACCEPT", "application/x-git-upload-pack-result", 1);
 	packptr = fetchReqHTTP(fetchurl, "POST", NULL, "application/x-git-upload-pack-request", content);

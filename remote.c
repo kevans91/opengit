@@ -90,10 +90,12 @@ remote_remove(int argc, char *argv[], uint8_t flags)
 
 	cur_section = sections;
 
-	sprintf(tmpconfig, "%s/.config.XXXXXX", dotgitpath);
+	snprintf(tmpconfig, PATH_MAX + NAME_MAX, "%s/.config.XXXXXX",
+	    dotgitpath);
 	fd = mkstemp(tmpconfig);
 	if (fd == -1) {
-		fprintf(stderr, "Unable to open temporary file: %s\n", tmpconfig);
+		fprintf(stderr, "Unable to open temporary file: %s\n",
+		    tmpconfig);
 		return -1;
 	}
 

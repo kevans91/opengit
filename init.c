@@ -58,7 +58,6 @@ int
 bare_init(char *project_directory)
 {
 	struct stat sb;
-	struct section new_config;
 	char cwd[PATH_MAX];
 	int fd;
 	int ret;
@@ -86,12 +85,6 @@ bare_init(char *project_directory)
 			return (-1);
 		}
 	}
-
-	new_config.type = CORE;
-	new_config.repositoryformatversion = 0;
-	new_config.filemode = TRUE;
-	new_config.bare = TRUE;
-	new_config.logallrefupdates = TRUE;
 
 	mkdir("./.git", 0755);
 
@@ -137,7 +130,6 @@ init_main(int argc, char *argv[])
 	int ret = 0;
 	int ch;
 	char *project_directory = NULL;
-	uint8_t flags = 0;
 
 	argc--; argv++;
 
@@ -147,7 +139,6 @@ init_main(int argc, char *argv[])
 	while((ch = getopt_long(argc, argv, "", long_options, NULL)) != -1) {
 		switch(ch) {
 		default:
-			flags = 0;
 			init_usage(-1);
 		}
 	}

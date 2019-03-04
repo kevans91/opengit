@@ -209,7 +209,7 @@ pack_get_packfile_offset(char *sha_str, char *filename)
 	for (i=0;i<20;i++)
 		sscanf(sha_str+i*2, "%2hhx", &sha_bin[i]);
 
-	sprintf(packdir, "%s/objects/pack", dotgitpath);
+	snprintf(packdir, PATH_MAX, "%s/objects/pack", dotgitpath);
 	d = opendir(packdir);
 
 	/* Find hash in idx file or die */
@@ -218,7 +218,7 @@ pack_get_packfile_offset(char *sha_str, char *filename)
 			file_ext = strrchr(dir->d_name, '.');
 			if (!file_ext || strncmp(file_ext, ".idx", 4))
 				continue;
-			sprintf(filename, "%s/objects/pack/%s", dotgitpath, dir->d_name);
+			snprintf(filename, PATH_MAX, "%s/objects/pack/%s", dotgitpath, dir->d_name);
 
 			packfd = open(filename, O_RDONLY);
 			fstat(packfd, &sb);
@@ -395,7 +395,8 @@ pack_find_sha_offset(unsigned char *sha, unsigned char *idxmap)
 {
 	struct fan *fans;
 	struct entry *entries;
-	struct checksum *checksums;
+	/* This value is set, but never used. Leaving in for reference */
+	//struct checksum *checksums;
 	struct offset *offsets;
 	int idx_offset;
 	char idx_version;
@@ -432,8 +433,9 @@ pack_find_sha_offset(unsigned char *sha, unsigned char *idxmap)
 
 	// Move to Checksums
 	idx_offset += (sizeof(struct entry) * nelements);
+	/* This value is set, but never used. Leaving in for reference */
 	// Point to checksums
-	checksums = (struct checksum *)(idxmap + idx_offset);
+	//checksums = (struct checksum *)(idxmap + idx_offset);
 	// Move to Offsets
 	idx_offset += (nelements * 4);
 	// Capture Offsets
