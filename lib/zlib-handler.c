@@ -103,7 +103,8 @@ deflate_caller(int sourcefd, inflated_handler inflated_handler, uint32_t *crcv, 
 
 			// Return value of 0 code means exit
 			use = input_len - strm.avail_in;
-			*crcv = crc32(*crcv, in+burn, use);
+			if (crcv != NULL)
+				*crcv = crc32(*crcv, in+burn, use);
 			burn+=use;
 			input_len -= use;
 			if (inflated_handler(out, have, use, arg) == NULL)
