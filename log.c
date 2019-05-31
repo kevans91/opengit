@@ -25,17 +25,14 @@
  * SUCH DAMAGE.
  */
 
-#include <netinet/in.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
+#include <fcntl.h>
+#include <getopt.h>
 #include <stdio.h>
-#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
-#include <stdint.h>
+#include <time.h>
 #include <unistd.h>
-#include <fcntl.h>
+
 #include "lib/zlib-handler.h"
 #include "lib/common.h"
 #include "lib/pack.h"
