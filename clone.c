@@ -436,10 +436,19 @@ clone_http(char *uri, char *repodir, struct smart_head *smart_head)
 	}
 
 	fetch_uri = uri;
+again:
 	ret = clone_http_get_head(fetch_uri, smart_head);
 	if (ret != 0) {
 		switch (ret) {
 		case ENOENT:
+			/* Fortunately, we can assume fetch_uri length will always be > 4 */
+			if (strcmp(fetch_uri + (strlen(fetch_uri) - 4), ".git") != 0) {
+				/* We'll try again with .git (+ null terminator) */
+				fetch_uri = malloc(strlen(uri) + 5);
+				snprintf(fetch_uri, strlen(uri) + 5, "%s.git", uri);
+				goto again;
+			}
+
 			fprintf(stderr, "Unable to clone repository: %s\n", uri);
 			break;
 		case EINVAL:
